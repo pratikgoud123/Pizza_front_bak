@@ -1,0 +1,112 @@
+version: '3.9'
+services:
+  pizza-service:
+    image: pizzamicroserviceimage1
+    container_name: pizza-service
+    build: PizzaDelivery/
+    restart: always
+    networks:
+      - mynetwork1
+    ports:
+      - 8088:8088
+    depends_on:
+      - mongoService
+      - cloudapiservice
+      - rabbitmq-service
+
+  mongoService:
+    image: mongo:latest
+    container_name: mongocontainer4
+    ports:
+      - 27017:27017
+    networks:
+      - mynetwork1
+
+  authentication-service:
+    image: authenticationmicroserviceimage3
+    container_name: authentication-service
+    build: UserAuthenticationService/
+    restart: always
+    networks:
+      - mynetwork1
+    ports:
+      - 8089:8089
+    depends_on:
+      - mysqlService
+      - cloudapiservice
+
+  mysqlService:
+    image: mysql:latest
+    container_name: mysqlcontainer4
+    networks:
+      - mynetwork1
+    ports:
+      - 3306:3306
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USERNAME: root
+      MYSQL_PASSWORD: root
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+
+  pizzacart-service:
+    image: pizzacartmicroserviceimage1
+    container_name: pizzacart-service
+    build: PizzaCart/
+    restart: always
+    networks:
+      - mynetwork1
+    ports:
+      - 8086:8086
+    depends_on:
+      - mongoService
+      - cloudapiservice
+
+  cloudapiservice:
+    image: apigatewayimage1
+    container_name: apigatewaycontainer1
+    build: ApiGateway/
+    restart: always
+    networks:
+      - mynetwork1
+    ports:
+      - 9000:9000
+
+  eureka-service:
+    image: eurekaimage1
+    container_name: eurekscontainer1
+    build: EurekaServer/
+    restart: always
+    networks:
+      - mynetwork1
+    ports:
+      - 8761:8761
+
+  rabbitmq-service:
+    image: rabbitmq:management
+    container_name: rabbitmq-service
+    restart: always
+    networks:
+      - mynetwork1
+    ports:
+      - 5672:5672
+      - 15672:15672
+    volumes:
+      - ~/.docker-conf/rabbitmq/data/:/var/lib/rabbitmq/
+      - ~/.docker-conf/rabbitmq/log/:/var/log/rabbitmq
+
+  rabbitmqconsumer-service:
+    image: rabbitmqconsumerimage1
+    container_name: rabbitmqconsumer-service
+    build: RabbitMQConsumer/
+    restart: always
+    networks:
+      - mynetwork1
+    ports:
+      - 8087:8087
+    depends_on:
+      - mongoService
+      - rabbitmq-service
+
+networks:
+  mynetwork1:
+    driver: bridge
